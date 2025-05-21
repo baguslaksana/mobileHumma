@@ -97,11 +97,22 @@ class _TambahCatatanPageState extends State<TambahCatatanPage> {
     };
 
     try {
-      final response = await http.post(
-        Uri.parse('$ip/catatan'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(body),
-      );
+      http.Response response;
+
+      if (widget.catatan != null && widget.catatan.idcatatan != null) {
+        final id = widget.catatan.idcatatan;
+        response = await http.put(
+          Uri.parse('$ip/catatan/$id'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode(body),
+        );
+      } else {
+        response = await http.post(
+          Uri.parse('$ip/catatan'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode(body),
+        );
+      }
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         final imagePaths = _extractImagePathsFromDocument(_controller.document);
