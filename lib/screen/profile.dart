@@ -38,7 +38,7 @@ class _ProfilePageState extends State<ProfilePage> {
       setState(() {
         nameController.text = data['name'] ?? '';
         emailController.text = data['email'] ?? '';
-        passwordController.text = data['password'] ?? '';
+        passwordController.text = '';
         isLoading = false;
       });
     } else {
@@ -67,90 +67,124 @@ class _ProfilePageState extends State<ProfilePage> {
   void showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE52020),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Icon(
-                    Icons.logout,
-                    size: 30,
-                    color: Colors.white,
-                  ),
+        bool isDialogLoading = false;
+
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                const SizedBox(height: 20),
-                const Text(
-                  'Yakin ingin keluar dari aplikasi?',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color.fromRGBO(92, 179, 56, 0.2),
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
-                        ),
+                    if (isDialogLoading)
+                      const Column(
+                        children: [
+                          LinearProgressIndicator(),
+                          SizedBox(height: 16),
+                        ],
                       ),
-                      onPressed: () {
-                        logout(context);
-                      },
-                      child: const Text(
-                        'Ya',
-                        style: TextStyle(
-                          color: Color(0xFF5CB338),
-                          fontWeight: FontWeight.bold,
-                        ),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE52020),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Icon(
+                        Icons.logout,
+                        size: 30,
+                        color: Colors.white,
                       ),
                     ),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFE52020),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
-                        ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'Yakin ingin keluar dari aplikasi?',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
                       ),
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text(
-                        'Tidak',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color.fromRGBO(
+                              92,
+                              179,
+                              56,
+                              0.2,
+                            ),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
+                          ),
+                          onPressed:
+                              isDialogLoading
+                                  ? null
+                                  : () async {
+                                    setStateDialog(() {
+                                      isDialogLoading = true;
+                                    });
+
+                                    await logout(
+                                      context,
+                                    ); // ini akan menutup dan redirect
+                                  },
+                          child: const Text(
+                            'Ya',
+                            style: TextStyle(
+                              color: Color(0xFF5CB338),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
-                      ),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFE52020),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
+                          ),
+                          onPressed:
+                              isDialogLoading
+                                  ? null
+                                  : () => Navigator.pop(context),
+                          child: const Text(
+                            'Tidak',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
@@ -177,9 +211,6 @@ class _ProfilePageState extends State<ProfilePage> {
       },
       body: jsonEncode(data),
     );
-
-    print('Status Code: ${response.statusCode}');
-    print('Response Body: ${response.body}');
 
     if (response.statusCode == 200) {
       ScaffoldMessenger.of(
@@ -245,7 +276,6 @@ class _ProfilePageState extends State<ProfilePage> {
                 backgroundImage: AssetImage('assets/img/profil.png'),
               ),
               const SizedBox(height: 12),
-
               isLoading
                   ? Shimmer.fromColors(
                     baseColor: Colors.grey.shade300,

@@ -85,29 +85,115 @@ class _CatatanPageState extends State<CatatanPage> {
     }
   }
 
+  String extractPlainTextFromDelta(String deltaJson) {
+    try {
+      final delta = jsonDecode(deltaJson);
+      if (delta is List) {
+        final buffer = StringBuffer();
+        for (var op in delta) {
+          if (op is Map && op['insert'] is String) {
+            buffer.write(op['insert']);
+          }
+        }
+        return buffer.toString();
+      }
+    } catch (e) {
+      print('Gagal parse Delta JSON: $e');
+    }
+    return '';
+  }
+
   void _showDeleteDialog(int id, int index) {
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Hapus Catatan'),
-            content: const Text(
-              'Apakah Anda yakin ingin menghapus catatan ini?',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Batal'),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  _deleteCatatan(id, index);
-                },
-                child: const Text('Hapus', style: TextStyle(color: Colors.red)),
-              ),
-            ],
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
           ),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE52020),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Icon(
+                    Icons.delete,
+                    size: 30,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Yakin ingin menghapus catatan?',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color.fromRGBO(92, 179, 56, 0.2),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _deleteCatatan(id, index);
+                      },
+
+                      child: const Text(
+                        'Ya',
+                        style: TextStyle(
+                          color: Color(0xFF5CB338),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFE52020),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text(
+                        'Tidak',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -261,9 +347,10 @@ class _CatatanPageState extends State<CatatanPage> {
                   const SizedBox(height: 8),
                   Expanded(
                     child: Text(
-                      catatan.deskripsi,
+                      extractPlainTextFromDelta(catatan.deskripsi),
                       style: const TextStyle(fontSize: 12),
                       overflow: TextOverflow.fade,
+                      maxLines: 4,
                     ),
                   ),
                 ],

@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
-import 'package:flutter_quill/quill_delta.dart';
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
@@ -32,33 +31,17 @@ class _TambahCatatanPageState extends State<TambahCatatanPage> {
     super.initState();
 
     _titleController.text = widget.catatan?.judul ?? '';
-
     final rawDeskripsi = widget.catatan?.deskripsi ?? '';
-    final gambarPath = widget.catatan?.gambar ?? '';
+    Document document;
 
-    String gambarUrl = '';
-    if (gambarPath.isNotEmpty) {
-      gambarUrl = '$img/$gambarPath';
+    try {
+      document =
+          rawDeskripsi.isNotEmpty
+              ? Document.fromJson(jsonDecode(rawDeskripsi))
+              : Document();
+    } catch (_) {
+      document = Document()..insert(0, rawDeskripsi);
     }
-
-    final deltaOps = <Map<String, dynamic>>[];
-
-    if (rawDeskripsi.isNotEmpty) {
-      deltaOps.add({'insert': rawDeskripsi + '\n'});
-    }
-
-    if (gambarUrl.isNotEmpty) {
-      deltaOps.add({
-        'insert': {'image': gambarUrl},
-      });
-      deltaOps.add({'insert': '\n'});
-    }
-
-    if (deltaOps.isEmpty) {
-      deltaOps.add({'insert': '\n'});
-    }
-
-    final document = Document.fromDelta(Delta.fromJson(deltaOps));
 
     _controller = QuillController(
       document: document,
@@ -103,12 +86,12 @@ class _TambahCatatanPageState extends State<TambahCatatanPage> {
       return;
     }
 
-    final plainDeskripsi = _controller.document.toPlainText();
+    final deltaJson = jsonEncode(_controller.document.toDelta().toJson());
 
     final Map<String, dynamic> body = {
       'user_id': userId,
       'judul': title,
-      'deskripsi': plainDeskripsi,
+      'deskripsi': deltaJson,
       'tgl': DateTime.now().toIso8601String().substring(0, 10),
       'gambar': null,
     };
@@ -179,9 +162,6 @@ class _TambahCatatanPageState extends State<TambahCatatanPage> {
     final streamedResponse = await request.send();
     final response = await http.Response.fromStream(streamedResponse);
 
-    print('Upload gambar status: ${response.statusCode}');
-    print('Response: ${response.body}');
-
     if (response.statusCode != 200) {
       throw Exception('Gagal upload gambar: ${response.body}');
     }
@@ -238,7 +218,6 @@ class _TambahCatatanPageState extends State<TambahCatatanPage> {
                           ],
                         ),
                         const SizedBox(height: 20),
-
                         Container(
                           decoration: BoxDecoration(
                             color: Colors.white,
@@ -267,9 +246,7 @@ class _TambahCatatanPageState extends State<TambahCatatanPage> {
                             ),
                           ),
                         ),
-
                         const SizedBox(height: 12),
-
                         Expanded(
                           child: Container(
                             padding: const EdgeInsets.all(12),
@@ -307,9 +284,8 @@ class _TambahCatatanPageState extends State<TambahCatatanPage> {
                                             )) {
                                               return FileImage(File(imageUrl));
                                             } else if (imageUrl.startsWith(
-                                                  'http',
-                                                ) ||
-                                                imageUrl.startsWith('https')) {
+                                              'http',
+                                            )) {
                                               return NetworkImage(imageUrl);
                                             }
                                             return null;
@@ -321,9 +297,7 @@ class _TambahCatatanPageState extends State<TambahCatatanPage> {
                             ),
                           ),
                         ),
-
                         const SizedBox(height: 12),
-
                         Container(
                           height: 55,
                           margin: const EdgeInsets.only(top: 10),
